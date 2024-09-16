@@ -77,18 +77,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void fetchUserByFilter(int value) async {
     User? fetchUser = await RemoteService().getUserById(value);
-    if (fetchUser != null) {
-      setState(() {
-        user = fetchUser;
-        isLoaded = true;
-      });
-    } else {
-      setState(() {
-        isLoaded = false;
-        user = null;
-      });
+    setState(() {
+      user = fetchUser;
+      isLoaded = true;
+    });
     }
-  }
 
   @override
   void dispose() {

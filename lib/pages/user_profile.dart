@@ -80,18 +80,11 @@ class _UserProfileState extends State<UserProfile> {
 
   void fetchUserByFilter() async {
     User? fetchUser = await RemoteService().getUserById(widget.userID);
-    if (fetchUser != null) {
-      setState(() {
-        user = fetchUser;
-        isLoaded = true;
-      });
-    } else {
-      setState(() {
-        isLoaded = false;
-        user = null;
-      });
+    setState(() {
+      user = fetchUser;
+      isLoaded = true;
+    });
     }
-  }
 
   @override
   Widget build(BuildContext context) {

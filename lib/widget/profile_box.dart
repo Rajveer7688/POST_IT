@@ -10,7 +10,7 @@ class ProfileBox extends StatefulWidget {
   final bool isSavedList;
 
 
-  ProfileBox({
+  const ProfileBox({
     super.key,
     required this.onLike,
     required this.onSave,

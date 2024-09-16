@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:post_it/models/post.dart';
 import 'package:post_it/models/user.dart';
 
@@ -12,15 +13,21 @@ class RemoteService {
   RemoteService() {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        print('Request: ${options.method} ${options.path}');
+        if (kDebugMode) {
+          print('Request: ${options.method} ${options.path}');
+        }
         handler.next(options);
       },
       onResponse: (response, handler) {
-        print('Response: ${response.statusCode} ${response.statusMessage}');
+        if (kDebugMode) {
+          print('Response: ${response.statusCode} ${response.statusMessage}');
+        }
         handler.next(response);
       },
-      onError: (DioError e, handler) {
-        print('Error: ${e.message}');
+      onError: (DioException e, handler) {
+        if (kDebugMode) {
+          print('Error: ${e.message}');
+        }
         return handler.next(e);
       },
     ));
@@ -36,7 +43,7 @@ class RemoteService {
       } else {
         throw Exception('Failed to load posts. Status Code: ${response.statusCode}');
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       _handleError(e);
       throw Exception('Error fetching posts: ${e.message}');
     }
@@ -52,7 +59,7 @@ class RemoteService {
       } else {
         throw Exception('Failed to load user posts. Status Code: ${response.statusCode}');
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       _handleError(e);
       throw Exception('Error fetching user posts: ${e.message}');
     }
@@ -67,7 +74,7 @@ class RemoteService {
       } else {
         throw Exception('Failed to load user by id. Status Code: ${response.statusCode}');
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       _handleError(e);
       throw Exception('Error fetching user by id: ${e.message}');
     }
@@ -83,19 +90,25 @@ class RemoteService {
       } else {
         throw Exception('Failed to load users. Status Code: ${response.statusCode}');
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       _handleError(e);
       throw Exception('Error fetching users: ${e.message}');
     }
   }
 
   /* --> <-- --> <-- Handle Errors in Dio Requests --> <-- --> <-- */
-  void _handleError(DioError error) {
+  void _handleError(DioException error) {
     if (error.response != null) {
-      print('Error occurred: ${error.response?.statusCode} - ${error.response?.statusMessage}');
-      print('Response Data: ${error.response?.data}');
+      if (kDebugMode) {
+        print('Error occurred: ${error.response?.statusCode} - ${error.response?.statusMessage}');
+      }
+      if (kDebugMode) {
+        print('Response Data: ${error.response?.data}');
+      }
     } else {
-      print('Request failed: ${error.message}');
+      if (kDebugMode) {
+        print('Request failed: ${error.message}');
+      }
     }
   }
 }

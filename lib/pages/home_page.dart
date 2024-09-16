@@ -85,12 +85,10 @@ class _HomePageState extends State<HomePage> {
 
   void fetchUserByID(int id) async {
     User? user = await RemoteService().getUserById(id);
-    if (user != null) {
-      setState(() {
-        userMap[id] = user;
-      });
+    setState(() {
+      userMap[id] = user;
+    });
     }
-  }
 
   void _onLikePressed(int index) {
     setState(() {
