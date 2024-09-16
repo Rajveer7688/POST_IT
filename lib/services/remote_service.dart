@@ -1,56 +1,101 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:post_it/models/post.dart';
-import 'package:http/http.dart' as http;
 import 'package:post_it/models/user.dart';
 
 class RemoteService {
-  /* --> <-- --> <-- Get Posts from API --> <-- --> <-- */
-  Future<List<Post>?> getPosts() async {
-    var client = http.Client();
-    var uri = Uri.parse('https://jsonplaceholder.typicode.com/posts');
-    var response = await client.get(uri);
-    if(response.statusCode == 200) {
-      var json = response.body;
-      return postFromJson(json);
-    } else {
-      print('Failed to load posts. Status Code: ${response.statusCode}');
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'https://jsonplaceholder.typicode.com',
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  ));
+
+  RemoteService() {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        print('Request: ${options.method} ${options.path}');
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print('Response: ${response.statusCode} ${response.statusMessage}');
+        handler.next(response);
+      },
+      onError: (DioError e, handler) {
+        print('Error: ${e.message}');
+        return handler.next(e);
+      },
+    ));
+  }
+
+  /* --> <-- --> <-- Get Posts from API using Dio --> <-- --> <-- */
+  Future<List<Post>> getPosts() async {
+    try {
+      final response = await _dio.get('/posts');
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = response.data;
+        return jsonData.map((postJson) => Post.fromJson(postJson)).toList();
+      } else {
+        throw Exception('Failed to load posts. Status Code: ${response.statusCode}');
+      }
+    } on DioError catch (e) {
+      _handleError(e);
+      throw Exception('Error fetching posts: ${e.message}');
     }
   }
 
-  /* --> <-- --> <-- Get Posts by User ID from API --> <-- --> <-- */
-  Future<List<Post>?> getUserPosts(int userID) async {
-    var client = http.Client();
-    var uri = Uri.parse('https://jsonplaceholder.typicode.com/posts?userId=$userID');
-    var response = await client.get(uri);
-    if (response.statusCode == 200) {
-      var json = response.body;
-      return postFromJson(json);
-    } else {
-      print('Failed to load user posts. Status Code: ${response.statusCode}');
+  /* --> <-- --> <-- Get Posts by User ID from API using Dio --> <-- --> <-- */
+  Future<List<Post>> getUserPosts(int userId) async {
+    try {
+      final response = await _dio.get('/posts', queryParameters: {'userId': userId});
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = response.data;
+        return jsonData.map((postJson) => Post.fromJson(postJson)).toList();
+      } else {
+        throw Exception('Failed to load user posts. Status Code: ${response.statusCode}');
+      }
+    } on DioError catch (e) {
+      _handleError(e);
+      throw Exception('Error fetching user posts: ${e.message}');
     }
   }
 
-  /* --> <-- --> <-- Get User by ID from API --> <-- --> <-- */
-  Future<User?> getUserById(int userId) async {
-    final uri = Uri.parse('https://jsonplaceholder.typicode.com/users/$userId');
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return User.fromJson(json);
-    } else {
-      print('Failed to load user by id, Status Code: ${response.statusCode}');
+  /* --> <-- --> <-- Get User by ID from API using Dio --> <-- --> <-- */
+  Future<User> getUserById(int userId) async {
+    try {
+      final response = await _dio.get('/users/$userId');
+      if (response.statusCode == 200) {
+        return User.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load user by id. Status Code: ${response.statusCode}');
+      }
+    } on DioError catch (e) {
+      _handleError(e);
+      throw Exception('Error fetching user by id: ${e.message}');
     }
   }
 
-  /* --> <-- --> <-- Get User by ID from API --> <-- --> <-- */
+  /* --> <-- --> <-- Get All Users from API using Dio --> <-- --> <-- */
   Future<List<User>> getAllUsers() async {
-    final uri = Uri.parse('https://jsonplaceholder.typicode.com/users');
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonList = jsonDecode(response.body);
-      return jsonList.map((json) => User.fromJson(json)).toList();
+    try {
+      final response = await _dio.get('/users');
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = response.data;
+        return jsonData.map((userJson) => User.fromJson(userJson)).toList();
+      } else {
+        throw Exception('Failed to load users. Status Code: ${response.statusCode}');
+      }
+    } on DioError catch (e) {
+      _handleError(e);
+      throw Exception('Error fetching users: ${e.message}');
+    }
+  }
+
+  /* --> <-- --> <-- Handle Errors in Dio Requests --> <-- --> <-- */
+  void _handleError(DioError error) {
+    if (error.response != null) {
+      print('Error occurred: ${error.response?.statusCode} - ${error.response?.statusMessage}');
+      print('Response Data: ${error.response?.data}');
     } else {
-      throw Exception('Failed to load users');
+      print('Request failed: ${error.message}');
     }
   }
 }

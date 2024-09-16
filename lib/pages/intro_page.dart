@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import 'home_page.dart';
 
@@ -47,7 +48,10 @@ class IntroPage extends StatelessWidget {
               GestureDetector(
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(
-                      builder: (context) => HomePage(),
+                      builder: (context) => ShowCaseWidget(
+                        enableAutoScroll: true,
+                        builder: (context) => const HomePage(),
+                      ),
                     ),
                 ),
                 child: Container(

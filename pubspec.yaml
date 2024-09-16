@@ -19,6 +19,9 @@ dependencies:
   font_awesome_flutter: ^10.7.0
   dio: ^5.7.0
   auto_size_text: ^3.0.0
+  showcaseview: ^3.0.0
+  shared_preferences: ^2.3.2
+  shimmer: ^3.0.0
 
 # All Dev Dependencies
 dev_dependencies:

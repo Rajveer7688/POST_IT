@@ -2,11 +2,11 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:post_it/widget/profile_menu.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../models/post.dart';
 import '../models/user.dart';
 import '../services/remote_service.dart';
-import 'no_action.dart';
 
 class UserProfile extends StatefulWidget {
   final int userID;
@@ -147,19 +147,6 @@ class _UserProfileState extends State<UserProfile> {
                             ),
                           ),
                         ),
-                        TextButton(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const NoAction()));
-                            },
-                            child: const AutoSizeText(
-                              "Change Profile Picture",
-                              style: TextStyle(
-                                color: Colors.deepPurple,
-                                fontFamily: 'OpenSans',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            )),
                       ],
                     ),
                   ),
@@ -396,36 +383,49 @@ class _UserProfileState extends State<UserProfile> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  /* ---------------------- Post Title ---------------------- */
-                                  Text(
-                                    capitalizeEveryWord(post.title),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black,
-                                      fontFamily: 'Roboto',
-                                      fontWeight: FontWeight.w600,
-                                      wordSpacing: 1.2,
-                                      letterSpacing: 0.7,
+                                  /* ---------------------- Error Message Handling ---------------------- */
+                                  if (post.title.isEmpty || post.body.isEmpty)
+                                    const Text(
+                                      'Error: No data available',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  else ...[
+                                    /* ---------------------- Post Title ---------------------- */
+                                    Text(
+                                      capitalizeEveryWord(post.title),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black,
+                                        fontFamily: 'Roboto',
+                                        fontWeight: FontWeight.w600,
+                                        wordSpacing: 1.2,
+                                        letterSpacing: 0.7,
+                                      ),
                                     ),
-                                  ),
 
-                                  /* ---------------------- Post Body ---------------------- */
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    capitalizeEveryWord(post.body),
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.black,
-                                      fontFamily: 'OpenSans',
-                                      fontWeight: FontWeight.w400,
-                                      wordSpacing: 0.6,
-                                      letterSpacing: 0.5,
+                                    /* ---------------------- Post Body ---------------------- */
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      capitalizeEveryWord(post.body),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black,
+                                        fontFamily: 'OpenSans',
+                                        fontWeight: FontWeight.w400,
+                                        wordSpacing: 0.6,
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 15)
                         ],
                       );
@@ -435,10 +435,78 @@ class _UserProfileState extends State<UserProfile> {
               ),
             ),
           ],
-        ) : const Center(
-          child: CircularProgressIndicator(),
-        ),
+        ) : _buildShimmerEffect(),
       )
+    );
+  }
+
+  Widget _buildShimmerEffect() {
+    return Column(
+      children: [
+        // Profile picture shimmer
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[350],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  height: 16,
+                  width: 120,
+                  color: Colors.grey[300],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  height: 16,
+                  width: 200,
+                  color: Colors.grey[300],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+        // Personal information shimmer
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: List.generate(6, (index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Container(
+                    height: 16,
+                    width: double.infinity,
+                    color: Colors.grey[300],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
     );
   }
 }

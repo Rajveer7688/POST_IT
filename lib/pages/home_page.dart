@@ -7,6 +7,9 @@ import 'package:post_it/pages/search_screen.dart';
 import 'package:post_it/pages/user_profile.dart';
 import 'package:post_it/services/remote_service.dart';
 import 'package:post_it/widget/profile_box.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../models/post.dart';
 
@@ -26,6 +29,12 @@ class _HomePageState extends State<HomePage> {
   var isLiked = false;
   var isSaved = false;
   var isUserGet = false;
+  bool _isShowCase = false;
+
+  final GlobalKey _one = GlobalKey();
+  final GlobalKey _two = GlobalKey();
+  final GlobalKey _three = GlobalKey();
+  final GlobalKey _four = GlobalKey();
 
   Map<int, String> userImages = {
     1: 'assets/images/1.png',
@@ -44,6 +53,19 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     getData();
+    _checkIfShowcaseSeen();
+    WidgetsBinding.instance.addPostFrameCallback((timestamp) {
+      ShowCaseWidget.of(context).startShowCase([_one, _two, _three, _four]);
+    });
+  }
+
+  Future<void> _checkIfShowcaseSeen() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool hasSeenShowcase = prefs.getBool('hasSeenShowcase') ?? false;
+    if (!hasSeenShowcase) {
+      setState(() { _isShowCase = true; });
+      prefs.setBool('hasSeenShowcase', true);
+    }
   }
 
   void getData() async {
@@ -128,9 +150,14 @@ class _HomePageState extends State<HomePage> {
         forceMaterialTransparency: true,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Padding(
-              padding: EdgeInsets.only(left: 6),
-              child: Icon(Icons.menu),
+            icon: Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: _isShowCase ? Showcase(
+                key: _one,
+                overlayOpacity: 0.5,
+                description: 'Tap to Explore Menu',
+                child: const Icon(Icons.menu, color: Colors.black87),
+              ) : const Icon(Icons.menu, color: Colors.black87),
             ),
             onPressed: () {
               Scaffold.of(context).openDrawer();
@@ -228,7 +255,35 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (context) => const SearchScreen()),
               );
             },
-            child: Container(
+            child: _isShowCase ? Showcase(
+              key: _two,
+              overlayOpacity: 0.5,
+              targetShapeBorder: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(3),
+              ),
+              description: 'Tap to Search Content Creators',
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Search for creators',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    Icon(
+                      Icons.search,
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              ),
+            ) : Container(
               padding: const EdgeInsets.all(12),
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
@@ -239,7 +294,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Search by User ID',
+                    'Search for creators',
                     style: TextStyle(color: Colors.grey),
                   ),
                   Icon(
@@ -284,7 +339,7 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Visibility(
               visible: isLoaded,
-              replacement: const Center(child: CircularProgressIndicator()),
+              replacement: getShimmerLoading(),
               child: ListView.builder(
                 itemCount: posts?.length,
                 itemBuilder: (context, index) {
@@ -298,42 +353,20 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         children: [
                           /* ---------------------- User Photo ---------------------- */
-                          GestureDetector(
-                            onTap: () => createNewDialog(index, post.userId),
-                            child: Container(
-                              height: 50,
-                              width: 50,
-                              margin: const EdgeInsets.only(
-                                  left: 20, right: 12, top: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[350],
-                                borderRadius: BorderRadius.circular(36),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Colors.purple,
-                                    Colors.pink,
-                                    Colors.orange,
-                                    Colors.yellow
-                                  ],
-                                  stops: [0.0, 0.33, 0.66, 1.0],
-                                ),
-                              ),
-                              child: Container(
-                                margin: const EdgeInsets.all(2.5),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(36),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(36),
-                                  child: Image.asset(
-                                    imagePath,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
-                                ),
-                              ),
+                          Container(
+                            margin: const EdgeInsets.only(
+                                left: 20, right: 12, top: 12
+                            ),
+                            child: GestureDetector(
+                              onTap: () => createNewDialog(index, post.userId),
+                              child: index == 1 && _isShowCase ? Showcase(
+                                  overlayOpacity: 0.5,
+                                  targetShapeBorder: const CircleBorder(),
+                                  key: _three,
+                                  showArrow: true,
+                                  description: 'Tap to View Profile Picture',
+                                  child: buildUserPhoto(imagePath),
+                              ) : buildUserPhoto(imagePath),
                             ),
                           ),
 
@@ -353,59 +386,13 @@ class _HomePageState extends State<HomePage> {
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(top: 12),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    AutoSizeText(
-                                      user != null
-                                          ? user.name
-                                          : 'Leanne Graham',
-                                      maxLines: 1,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: Colors.black87,
-                                        overflow: TextOverflow.ellipsis,
-                                        fontFamily: 'OpenSans',
-                                        letterSpacing: 0.6,
-                                        wordSpacing: 1.2,
-                                      ),
-                                    ),
-
-                                    /* ---------------------- User Details ---------------------- */
-                                    RichText(
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      text: TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: "${user != null ? user.company.name : "Romaguera-Crona"} • ",
-                                            style: const TextStyle(
-                                              color: Colors.black54,
-                                              fontFamily: 'Roboto',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: user != null
-                                                ? user.website
-                                                : "hildegard.org",
-                                            style: const TextStyle(
-                                              color: Colors.blue,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              fontFamily: 'Roboto',
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                child: index == 1 && _isShowCase ? Showcase(
+                                    overlayOpacity: 0.5,
+                                    key: _four,
+                                    targetPadding: const EdgeInsets.all(7),
+                                    description: 'Tap to Visit User Profile',
+                                    child: designUserName(user)
+                                ) : designUserName(user),
                               ),
                             ),
                           ),
@@ -527,6 +514,201 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  buildUserPhoto(String imagePath) {
+    return Container(
+      height: 50,
+      width: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey[350],
+        borderRadius: BorderRadius.circular(36),
+        gradient: const LinearGradient(
+          colors: [
+            Colors.purple,
+            Colors.pink,
+            Colors.orange,
+            Colors.yellow
+          ],
+          stops: [0.0, 0.33, 0.66, 1.0],
+        ),
+      ),
+      child: Container(
+        margin: const EdgeInsets.all(2.5),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(36),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(36),
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        ),
+      ),
+    );
+  }
+
+  designUserName(User? user) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AutoSizeText(
+          user != null
+              ? user.name
+              : 'Leanne Graham',
+          maxLines: 1,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            color: Colors.black87,
+            overflow: TextOverflow.ellipsis,
+            fontFamily: 'OpenSans',
+            letterSpacing: 0.6,
+            wordSpacing: 1.2,
+          ),
+        ),
+
+        /* ---------------------- User Details ---------------------- */
+        RichText(
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: "${user != null ? user.company.name : "Romaguera-Crona"} • ",
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontFamily: 'Roboto',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextSpan(
+                text: user != null
+                    ? user.website
+                    : "hildegard.org",
+                style: const TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Roboto',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget getShimmerLoading() {
+    return ListView.builder(
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(left: 20, right: 12, top: 12),
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ),
+
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    child: Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        width: double.infinity,
+                        height: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+
+                Container(
+                  margin: const EdgeInsets.only(right: 20, top: 12),
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: const Icon(
+                      Icons.more_vert,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            Container(
+              margin: const EdgeInsets.only(left: 12, right: 12, top: 12),
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(
+                  width: double.infinity,
+                  height: 20,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+
+            Container(
+              margin: const EdgeInsets.only(left: 12, right: 12, top: 8),
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      height: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 150,
+                      height: 14,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
     );
   }
 }
